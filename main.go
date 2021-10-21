@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 )
 
 func getEnv() (string, string, string) {
@@ -80,19 +79,12 @@ func placeOrder(ticker string, side alpaca.Side) (*alpaca.Order, error) {
 	case alpaca.Buy, alpaca.Sell:
 		// Amount of Ticker currently owned
 		_ = alpaca.DefaultClient.ClosePosition(ticker)
+		status := make(chan string, 1)
+		go func() {
+			status <- checkTickerFilled(ticker)
+		}()
+		<-status
 
-		status := "open"
-		for status == "open" {
-			orders, _ := alpaca.ListOrders(&status, nil, nil, nil)
-			for _, order := range orders {
-				if order.Symbol == ticker {
-					status = "open"
-					break
-				}
-				status = "closed"
-			}
-			time.Sleep(1 * time.Second)
-		}
 		log.Println("Closed", ticker)
 		log.Println(side, "quantity", qty, "of", ticker)
 		placeOrderRequest = alpaca.PlaceOrderRequest{
