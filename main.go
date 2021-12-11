@@ -24,6 +24,11 @@ func getEnv() (string, string, string) {
 
 func handleBuyAndSell(w http.ResponseWriter, req *http.Request) {
 
+	setupResponse(&w, req)
+	if (*req).Method == "OPTIONS" {
+		return
+	}
+
 	transactionAllow := make(chan error, 1)
 	enoughFundsAvail := make(chan bool, 1)
 	t, err := demarshalTradingViewBody(&req.Body)
@@ -101,13 +106,35 @@ func placeOrder(ticker string, side alpaca.Side) (*alpaca.Order, error) {
 	return alpaca.PlaceOrder(placeOrderRequest)
 }
 
+func setupResponse(w *http.ResponseWriter, req *http.Request) {
+	s := make(map[string]struct{})
+	s["52.89.214.238"] = struct{}{}
+	s["34.212.75.30"] = struct{}{}
+	s["54.218.53.128"] = struct{}{}
+	s["52.32.178.7"] = struct{}{}
+	_, ok := s[req.Host]
+	if ok {
+		(*w).Header().Set("Access-Control-Allow-Origin", req.Host)
+	}
+	fmt.Print("HOST: ")
+	fmt.Println(req.Host)
+	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization, Host, User-Agent")
+}
+
 func main() {
 	getEnv()
 	getAccountBalance()
 
 	http.HandleFunc("/", handleBuyAndSell)
 
-	err := http.ListenAndServe(":8080", nil)
+	port := os.Getenv("PORT")
+
+	if len(port) == 0 {
+		port = "8080"
+	}
+
+	err := http.ListenAndServe(":"+port, nil)
 
 	if err != nil {
 		fmt.Println(err)
