@@ -16,7 +16,7 @@ type TradingViewMessage struct {
 	Interval string
 }
 
-func demarshalTradingViewBody(body *io.ReadCloser) (*TradingViewMessage, error) {
+func unmarshalTradingViewBody(body *io.ReadCloser) (*TradingViewMessage, error) {
 	var t *TradingViewMessage
 	var err error
 	// Decode Request Body into TradingViewMessage

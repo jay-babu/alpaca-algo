@@ -31,7 +31,7 @@ func handleBuyAndSell(w http.ResponseWriter, req *http.Request) {
 
 	transactionAllow := make(chan error, 1)
 	enoughFundsAvail := make(chan bool, 1)
-	t, err := demarshalTradingViewBody(&req.Body)
+	t, err := unmarshalTradingViewBody(&req.Body)
 	if err != nil {
 		dumpBody(req)
 		log.Println("Body has an error!")
