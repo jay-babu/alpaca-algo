@@ -24,7 +24,10 @@ func getEnv() (string, string, string) {
 
 func handleBuyAndSell(w http.ResponseWriter, req *http.Request) {
 
-	setupResponse(&w, req)
+	ok := setupResponse(&w, req)
+	if !ok {
+		return
+	}
 	if (*req).Method == "OPTIONS" {
 		return
 	}
@@ -106,20 +109,22 @@ func placeOrder(ticker string, side alpaca.Side) (*alpaca.Order, error) {
 	return alpaca.PlaceOrder(placeOrderRequest)
 }
 
-func setupResponse(w *http.ResponseWriter, req *http.Request) {
+func setupResponse(w *http.ResponseWriter, req *http.Request) bool {
 	s := make(map[string]struct{})
 	s["52.89.214.238"] = struct{}{}
 	s["34.212.75.30"] = struct{}{}
 	s["54.218.53.128"] = struct{}{}
 	s["52.32.178.7"] = struct{}{}
-	_, ok := s[req.Host]
+	req.Header.Get("X-Forwarded-For")
+	_, ok := s[req.Header.Get("X-Forwarded-For")]
 	if ok {
-		(*w).Header().Set("Access-Control-Allow-Origin", req.Host)
+		(*w).Header().Set("Access-Control-Allow-Origin", req.Header.Get("X-Forwarded-For"))
 	}
 	fmt.Print("HOST: ")
 	fmt.Println(req.Host)
-	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	(*w).Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization, Host, User-Agent")
+	return ok
 }
 
 func main() {
