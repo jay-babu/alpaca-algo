@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alpacahq/alpaca-trade-api-go/v2/alpaca"
+	"github.com/alpacahq/alpaca-trade-api-go/v2/marketdata"
 	"github.com/shopspring/decimal"
 	"log"
 	"net/http"
@@ -82,6 +83,16 @@ func placeOrder(ticker string, side alpaca.Side) (*alpaca.Order, error) {
 
 	// 1 Share of Ticker
 	qty := decimal.NewFromInt(1)
+	quote, err := marketdata.GetLatestQuote(ticker)
+	if err != nil {
+		log.Println("Can't get latest price for", ticker+":", err)
+		return nil, err
+	}
+	pos := 1.0
+	if side == alpaca.Sell {
+		pos = -1
+	}
+	takeProfitPrice := decimal.NewFromFloat(quote.BidPrice + (pos * 5))
 
 	switch side {
 	case alpaca.Buy, alpaca.Sell:
@@ -95,9 +106,13 @@ func placeOrder(ticker string, side alpaca.Side) (*alpaca.Order, error) {
 
 		log.Println("Closed", ticker)
 		log.Println(side, "quantity", qty, "of", ticker)
+		log.Println("Take Profit at: ", takeProfitPrice)
 		placeOrderRequest = alpaca.PlaceOrderRequest{
-			AssetKey:    &ticker,
-			Qty:         &qty,
+			AssetKey: &ticker,
+			Qty:      &qty,
+			TakeProfit: &alpaca.TakeProfit{
+				LimitPrice: &takeProfitPrice,
+			},
 			Type:        alpaca.Market,
 			TimeInForce: alpaca.Day,
 			Side:        side,
