@@ -106,6 +106,7 @@ func placeOrder(ticker string, side alpaca.Side) (*alpaca.Order, error) {
 
 		log.Println("Closed", ticker)
 		log.Println(side, "quantity", qty, "of", ticker)
+		log.Println("Current Price:", quote.BidPrice)
 		log.Println("Take Profit at: ", takeProfitPrice)
 		placeOrderRequest = alpaca.PlaceOrderRequest{
 			AssetKey: &ticker,
@@ -145,6 +146,7 @@ func setupResponse(w *http.ResponseWriter, req *http.Request) bool {
 func main() {
 	getEnv()
 	getAccountBalance()
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	http.HandleFunc("/", handleBuyAndSell)
 
