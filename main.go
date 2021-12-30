@@ -27,6 +27,7 @@ func handleBuyAndSell(w http.ResponseWriter, req *http.Request) {
 
 	ok := setupResponse(&w, req)
 	if !ok {
+		log.Println("Unauthorized Call.")
 		return
 	}
 	if (*req).Method == "OPTIONS" {
@@ -110,15 +111,18 @@ func placeOrder(ticker string, side alpaca.Side) (*alpaca.Order, error) {
 		log.Println(side, "quantity", qty, "of", ticker)
 		log.Println("Current Price:", quote.BidPrice)
 		log.Println("Take Profit at: ", takeProfitPrice)
+		bidPrice := decimal.NewFromFloat(quote.BidPrice)
 		placeOrderRequest = alpaca.PlaceOrderRequest{
 			AssetKey: &ticker,
 			Qty:      &qty,
 			TakeProfit: &alpaca.TakeProfit{
 				LimitPrice: &takeProfitPrice,
 			},
-			Type:        alpaca.Market,
-			TimeInForce: alpaca.Day,
-			Side:        side,
+			Type:          alpaca.Limit,
+			ExtendedHours: false,
+			LimitPrice:    &bidPrice,
+			TimeInForce:   alpaca.Day,
+			Side:          side,
 		}
 	default:
 		return nil, errors.New("action not supported. must be buy or sell")
