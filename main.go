@@ -66,7 +66,7 @@ func handleBuyAndSell(w http.ResponseWriter, req *http.Request) {
 
 	order, err := placeOrder(t.Ticker, t.Action)
 	log.Print("Result of Placing Order: ")
-	log.Println(order)
+	log.Println(*order)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
