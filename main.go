@@ -57,13 +57,15 @@ func handleBuyAndSell(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if enoughFunds := <-enoughFundsAvail; !enoughFunds {
-		log.Println("Can't afford to buy:", t.Ticker)
+		log.Println("Can't afford to", t.Action+":", t.Ticker)
 		w.WriteHeader(http.StatusAccepted)
 		_, _ = fmt.Fprintf(w, "Can't afford to buy: %s", t.Ticker)
 		return
 	}
 
-	_, err = placeOrder(t.Ticker, t.Action)
+	order, err := placeOrder(t.Ticker, t.Action)
+	log.Print("Result of Placing Order: ")
+	log.Println(order)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -143,10 +145,13 @@ func setupResponse(w *http.ResponseWriter, req *http.Request) bool {
 	return ok
 }
 
+func init() {
+	log.SetFlags(log.Flags() | log.Lshortfile)
+}
+
 func main() {
 	getEnv()
 	getAccountBalance()
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	http.HandleFunc("/", handleBuyAndSell)
 
