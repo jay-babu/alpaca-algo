@@ -4,8 +4,7 @@ import "errors"
 
 var AllowSet = map[string]struct{}{
 	"NVDA": {},
-	"BA":   {},
-	"AAPL": {},
+	"AMD":  {},
 }
 
 func allowedTicker(ticker string) error {
