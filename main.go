@@ -46,9 +46,6 @@ func handleBuyAndSell(w http.ResponseWriter, req *http.Request) {
 	go dumpBody(req)
 
 	go checkHours(transactionAllow)
-	go func() {
-		enoughFundsAvail <- canBuy(t.Ticker)
-	}()
 
 	if err := <-transactionAllow; err != nil {
 		log.Println("Error:", err)
@@ -57,14 +54,26 @@ func handleBuyAndSell(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	ticker := t.Ticker
+	_ = alpaca.DefaultClient.ClosePosition(ticker)
+	status := make(chan string, 1)
+	go func() {
+		status <- checkTickerFilled(ticker)
+	}()
+	<-status
+	log.Println("Closed", ticker)
+
+	go func() {
+		enoughFundsAvail <- canBuy(ticker)
+	}()
 	if enoughFunds := <-enoughFundsAvail; !enoughFunds {
-		log.Println("Can't afford to", t.Action+":", t.Ticker)
+		log.Println("Can't afford to", t.Action+":", ticker)
 		w.WriteHeader(http.StatusAccepted)
-		_, _ = fmt.Fprintf(w, "Can't afford to buy: %s", t.Ticker)
+		_, _ = fmt.Fprintf(w, "Can't afford to buy: %s", ticker)
 		return
 	}
 
-	order, err := placeOrder(t.Ticker, t.Action)
+	order, err := placeOrder(ticker, t.Action)
 	log.Print("Result of Placing Order: ")
 	log.Println(*order)
 	if err != nil {
@@ -100,29 +109,18 @@ func placeOrder(ticker string, side alpaca.Side) (*alpaca.Order, error) {
 	switch side {
 	case alpaca.Buy, alpaca.Sell:
 		// Amount of Ticker currently owned
-		_ = alpaca.DefaultClient.ClosePosition(ticker)
-		status := make(chan string, 1)
-		go func() {
-			status <- checkTickerFilled(ticker)
-		}()
-		<-status
 
-		log.Println("Closed", ticker)
 		log.Println(side, "quantity", qty, "of", ticker)
 		log.Println("Current Price:", quote.BidPrice)
-		log.Println("Take Profit at: ", takeProfitPrice)
-		bidPrice := decimal.NewFromFloat(quote.BidPrice)
 		placeOrderRequest = alpaca.PlaceOrderRequest{
 			AssetKey: &ticker,
 			Qty:      &qty,
 			TakeProfit: &alpaca.TakeProfit{
 				LimitPrice: &takeProfitPrice,
 			},
-			Type:          alpaca.Limit,
-			ExtendedHours: false,
-			LimitPrice:    &bidPrice,
-			TimeInForce:   alpaca.Day,
-			Side:          side,
+			Type:        alpaca.Market,
+			TimeInForce: alpaca.Day,
+			Side:        side,
 		}
 	default:
 		return nil, errors.New("action not supported. must be buy or sell")

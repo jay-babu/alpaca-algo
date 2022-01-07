@@ -1,4 +1,4 @@
-FROM golang:1-buster
+FROM golang:1-bullseye
 
 RUN apt update
 RUN apt upgrade -y

@@ -55,7 +55,6 @@ func checkTickerFilled(ticker string) string {
 			log.Println(order.Symbol)
 			log.Println(ticker)
 			if order.Symbol == ticker {
-				status = "open"
 				break
 			}
 			status = "closed"
