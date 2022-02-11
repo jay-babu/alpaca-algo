@@ -119,6 +119,7 @@ func placeOrder(ticker string, side alpaca.Side) (*alpaca.Order, error) {
 				LimitPrice: &takeProfitPrice,
 			},
 			Type:        alpaca.Market,
+			OrderClass:  alpaca.Oto,
 			TimeInForce: alpaca.Day,
 			Side:        side,
 		}
